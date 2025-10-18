@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  complexity-ai:
+    build: .
+    container_name: complexity-ai
+    shm_size: "16gb"
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HF_TOKEN=${HF_TOKEN}
+    volumes:
+      - .:/app
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    working_dir: /app
+    tty: true

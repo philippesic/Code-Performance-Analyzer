@@ -1,0 +1,9 @@
+torch
+transformers
+accelerate
+bitsandbytes
+peft
+datasets
+tree_sitter
+tqdm
+huggingface_hub
