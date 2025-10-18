@@ -15,3 +15,9 @@ Mac: `docker run -it --platform linux/amd64 --name cpa-dev -v $(pwd):/app -v ~/.
 Boot:
 
 Boot container: `docker start -ai cpa-dev`
+
+Models:
+
+Complexity Model: starcoder2:3b
+
+Teacher: deepseek-coder-v2:7b

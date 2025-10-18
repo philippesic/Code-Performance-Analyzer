@@ -1,29 +1,34 @@
-from transformers import AutoModelForCausalLM, AutoTokenizer
-import torch, json
+import requests, json, os
 
-model_id = "deepseek-ai/deepseek-coder-v2-instruct"
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForCausalLM.from_pretrained(model_id, device_map="auto", load_in_4bit=True)
+TEACHER_MODEL = "deepseek-coder-v2:7b"
 
-def label_example(code, ast):
-    prompt = f"""You are an expert in algorithmic complexity.
-Analyze the following code and AST to predict its time complexity.
+def get_complexity(code: str) -> str:
+    prompt = f"""Analyze the following function and provide its time complexity in Big-O notation.
 
-CODE:
+Code:
 {code}
 
-AST SUMMARY:
-{ast}
+Respond only with the Big-O expression (e.g. O(n log n), O(1), O(n^2)).
+"""
+    resp = requests.post(
+        "http://localhost:11434/api/generate",
+        json={"model": TEACHER_MODEL, "prompt": prompt, "stream": False}
+    )
+    data = resp.json()
+    return data["response"].strip()
 
-Respond in JSON: {{"complexity": "O(...)", "reasoning": "..."}}"""
-    inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
-    output = model.generate(**inputs, max_new_tokens=200)
-    text = tokenizer.decode(output[0], skip_special_tokens=True)
-    return text
-
-def label_batch(input_dir, output_dir):
-    for file in os.listdir(input_dir):
-        data = json.load(open(os.path.join(input_dir, file)))
-        label = label_example(data["code"], data["ast"])
-        json.dump({"code": data["code"], "ast": data["ast"], "label": label},
-                  open(os.path.join(output_dir, file), "w"))
+if __name__ == "__main__":
+    example_code = """
+def binary_search(arr, target):
+    low, high = 0, len(arr) - 1
+    while low <= high:
+        mid = (low + high) // 2
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            low = mid + 1
+        else:
+            high = mid - 1
+    return -1
+"""
+    print("Predicted Complexity:", get_complexity(example_code))
