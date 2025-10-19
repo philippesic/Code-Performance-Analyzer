@@ -7,3 +7,4 @@ datasets
 tree_sitter
 tqdm
 huggingface_hub
+dotenv
