@@ -1,0 +1,12 @@
+You are an expert in code analysis and Big O notation.
+
+Given the following code snippet, analyze its time complexity and return a single label in standard Big O notation.
+
+Use the following format:
+{
+  "code": "...",
+  "complexity": "O(...)"
+}
+
+Code:
+{{code}}
