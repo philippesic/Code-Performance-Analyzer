@@ -20,4 +20,7 @@ Models:
 
 Complexity Model: starcoder2:3b
 
+Push: Run push_model
+Pull: `cd models/student && git clone https://huggingface.co/philippesic/cpa`
+
 Teacher: deepseek-coder-v2:7b

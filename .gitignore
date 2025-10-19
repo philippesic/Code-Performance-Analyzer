@@ -1,8 +1,8 @@
-models/
 data/processed/
 data/labeled/
 *.bin
 *.pt
 *.safetensors
 __pycache__/
+.env
 
