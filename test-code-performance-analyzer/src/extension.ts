@@ -1,0 +1,44 @@
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+	console.log('Extension "Code Performance Analyzer" is now active!');
+
+	// Command: Hello World
+	const hello = vscode.commands.registerCommand('code-performance-analyzer.helloWorld', () => {
+		vscode.window.showInformationMessage('Hello from Code Performance Analyzer!');
+	});
+
+	// Command: Analyze Code
+	const analyze = vscode.commands.registerCommand('code-performance-analyzer.analyze', () => {
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) {
+			vscode.window.showErrorMessage('No active editor found!');
+			return;
+		}
+
+		const code = editor.document.getText();
+
+		// Basic heuristics
+		const loopCount = (code.match(/\b(for|while)\b/g) || []).length;
+		const funcCount = (code.match(/\bdef |function |=>/g) || []).length;
+
+		let complexity = 'O(1)';
+		if (loopCount > 0 && funcCount === 0) complexity = 'O(n)';
+		else if (loopCount > 1) complexity = 'O(n²)';
+		else if (funcCount > 2) complexity = 'O(n log n)';
+
+		const message = `Estimated Time Complexity: ${complexity}\nDetected Loops: ${loopCount}, Functions: ${funcCount}`;
+
+		// Output to VS Code Output Panel
+		const output = vscode.window.createOutputChannel('Code Performance Analyzer');
+		output.appendLine(`[${new Date().toLocaleTimeString()}] Code Analysis Results`);
+		output.appendLine(message);
+		output.show(true);
+
+		vscode.window.showInformationMessage(message);
+	});
+
+	context.subscriptions.push(hello, analyze);
+}
+
+export function deactivate() {}
