@@ -16,8 +16,21 @@
       {
         "command": "test-code-performance-analyzer.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "test-code-performance-analyzer.analyze",
+        "title": "Analyze Code Complexity"
       }
-    ]
+    ], 
+    "menus": {
+            "editor/context": [
+                {
+                    "when": "editorHasSelection",
+                    "command": "test-code-performance-analyzer.analyze",
+                    "group": "navigation"
+                }
+            ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
