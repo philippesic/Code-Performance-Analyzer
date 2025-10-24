@@ -1,12 +1,16 @@
-You are an expert in code analysis and Big O notation.
+You are an expert Python code generator. Produce ONE Python code example that fits the requested category below and answer with a single JSON object ONLY (no explanation, no markdown, no surrounding text).
 
-Given the following code snippet, analyze its time complexity and return a single label in standard Big O notation.
+Category:
+{{category}}
 
-Use the following format:
-{
-  "code": "...",
-  "complexity": "O(...)"
-}
+Requirements for the generated JSON:
+- Return exactly one JSON object with two keys:
+  - "code": a string containing the full Python code (do NOT wrap in triple backticks; include imports and docstrings inline if needed).
+  - "complexity": a string with the time complexity in big-O notation (e.g. "O(n log n)").
+- The "code" value must be runnable Python where practical, cover edge cases, and use standard-library calls when relevant.
+- Be diverse across multiple calls (vary algorithms, inputs, edge cases, data sizes, and standard-library usage).
+- Do NOT include explanatory text outside the JSON.
+- If you cannot produce runnable code, set "code" to an empty string and set "complexity" to "unknown".
 
-Code:
-{{code}}
+Example (for formatting only — do not include these examples in the output):
+{"code": "def example():\\n    pass", "complexity": "O(1)"}

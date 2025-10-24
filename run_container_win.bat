@@ -7,4 +7,5 @@ docker run -it --name cpa-dev --gpus all ^
   -v "%cd%":/app ^
   -v "%USERPROFILE%\.cache\huggingface":/root/.cache/huggingface ^
   -w /app ^
+  -e HF_HOME=/root/.cache/huggingface ^
   cpa bash

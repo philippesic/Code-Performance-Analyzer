@@ -1,15 +1,21 @@
-from tree_sitter import Language, Parser
+from tree_sitter_languages import get_parser
 
-Language.build_library(
-  'build/my-languages.so',
-  ['tree-sitter-python']
-)
+parser = get_parser("python")
 
-PY_LANGUAGE = Language('build/my-languages.so', 'python')
+def extract_ast(code: str):
+    try:
+        tree = parser.parse(bytes(code, "utf8"))
+        root = tree.root_node
 
-parser = Parser()
-parser.set_language(PY_LANGUAGE)
+        def walk(node):
+            return {
+                "type": node.type,
+                "start": node.start_point,
+                "end": node.end_point,
+                "children": [walk(child) for child in node.children]
+            }
 
-def extract_ast(code):
-    tree = parser.parse(bytes(code, "utf8"))
-    return tree.root_node.sexp()
+        return walk(root)
+
+    except Exception as e:
+        return {"error": f"AST parse failed: {e}"}

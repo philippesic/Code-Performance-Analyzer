@@ -1,5 +1,7 @@
 # CPA
 
+Test Model: `python src/complexity.py <code>`
+
 Building Image:
 
 PC (For Training): `docker build -t cpa .`
