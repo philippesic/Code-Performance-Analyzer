@@ -18,7 +18,7 @@
         "title": "Hello World from Code Performance Analyzer"
       },
       {
-        "command": "test-code-performance-analyzer.analyze",
+        "command": "code-performance-analyzer.analyze",
         "title": "Analyze Code Complexity"
       }
     ], 
@@ -26,7 +26,7 @@
             "editor/context": [
                 {
                     "when": "editorHasSelection",
-                    "command": "test-code-performance-analyzer.analyze",
+                    "command": "code-performance-analyzer.analyze",
                     "group": "navigation"
                 }
             ]
