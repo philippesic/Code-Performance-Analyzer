@@ -1,6 +1,6 @@
 {
-  "name": "test-code-performance-analyzer",
-  "displayName": "test_CPA",
+  "name": "code-performance-analyzer",
+  "displayName": "Code Perfomance Analyze",
   "description": "Analyze code performance with estimated Big O complexity and optimization tips.",
   "version": "0.0.1",
   "engines": {
@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "test-code-performance-analyzer.helloWorld",
-        "title": "Hello World"
+        "command": "code-performance-analyzer.helloWorld",
+        "title": "Hello World from Code Performance Analyzer"
       },
       {
         "command": "test-code-performance-analyzer.analyze",
