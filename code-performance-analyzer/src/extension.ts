@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { CpaPanelProvider } from './cpaPanelProvider'; 
 
 // define a type for the decoration for it to be displayed in the complexity
 const complexityDecorationType = vscode.window.createTextEditorDecorationType({
@@ -12,14 +13,20 @@ const complexityDecorationType = vscode.window.createTextEditorDecorationType({
 
 export function activate(context: vscode.ExtensionContext) {
 	console.log('Extension "Code Performance Analyzer" is now active!');
-
+        
+        // register the provider for the panel view
+        const panel_provider = new CpaPanelProvider(context.extensionUri);
+        
+        context.subscriptions.push(
+            vscode.window.registerWebviewViewProvider(CpaPanelProvider.id, panel_provider)
+        );
 	// Command: Hello World
-	const hello = vscode.commands.registerCommand('test-code-performance-analyzer.helloWorld', () => {
+	const hello = vscode.commands.registerCommand('code-performance-analyzer.helloWorld', () => {
 		vscode.window.showInformationMessage('Hello from Code Performance Analyzer!');
 	});
 
 	// Command: Analyze Code
-	const analyze = vscode.commands.registerCommand('test-code-performance-analyzer.analyze', () => {
+	const analyze = vscode.commands.registerCommand('code-performance-analyzer.analyze', () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
 			vscode.window.showErrorMessage('No active editor found!');
