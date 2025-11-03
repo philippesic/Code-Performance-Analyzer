@@ -5,6 +5,8 @@ bitsandbytes
 peft
 datasets
 tree_sitter
+tree_sitter_python
+tree_sitter_languages
 tqdm
 huggingface_hub
 dotenv

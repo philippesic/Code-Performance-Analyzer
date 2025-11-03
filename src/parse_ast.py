@@ -1,9 +1,18 @@
-from tree_sitter_languages import get_parser
+from tree_sitter import Parser, Language
+import tree_sitter_python
 
-parser = get_parser("python")
+# Initialize parser once at module level
+_parser = None
+
+def _get_parser():
+    global _parser
+    if _parser is None:
+        _parser = Parser(Language(tree_sitter_python.language()))
+    return _parser
 
 def extract_ast(code: str):
     try:
+        parser = _get_parser()
         tree = parser.parse(bytes(code, "utf8"))
         root = tree.root_node
 

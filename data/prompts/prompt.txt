@@ -3,6 +3,12 @@ You are an expert Python code generator. Produce ONE Python code example that fi
 Category:
 {{category}}
 
+Subcategory:
+{{subcategory}}
+
+Additional requirement for variation:
+{{variation_requirement}}
+
 Requirements for the generated JSON:
 - Return exactly one JSON object with two keys:
   - "code": a string containing the full Python code (do NOT wrap in triple backticks; include imports and docstrings inline if needed).
