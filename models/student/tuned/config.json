@@ -19,7 +19,6 @@
   "num_attention_heads": 24,
   "num_hidden_layers": 30,
   "num_key_value_heads": 2,
-  "pad_token_id": 0,
   "residual_dropout": 0.1,
   "rope_scaling": null,
   "rope_theta": 999999.4420358813,
