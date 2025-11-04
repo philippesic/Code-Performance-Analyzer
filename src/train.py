@@ -46,7 +46,7 @@ else:
     tokenized_dataset.save_to_disk(TOKENIZED_PATH)
     print(f"Saved tokenized data to {TOKENIZED_PATH}")
 
-# ---- BitsAndBytes 4-bit quantization config ----
+# 4b conf
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
     bnb_4bit_use_double_quant=True,
@@ -54,7 +54,6 @@ bnb_config = BitsAndBytesConfig(
     bnb_4bit_compute_dtype=torch.float16,
 )
 
-# ---- Load base model in 4-bit ----
 print("Loading base model")
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
@@ -76,7 +75,7 @@ model = get_peft_model(model, lora_config)
 
 data_collator = DataCollatorForLanguageModeling(tokenizer, mlm=False)
 
-# Arga
+# Arg
 training_args = TrainingArguments(
     output_dir=OUTPUT_DIR,
     per_device_train_batch_size=2, # Tweak per gpu
