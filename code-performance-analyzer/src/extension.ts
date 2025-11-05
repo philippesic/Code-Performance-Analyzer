@@ -33,12 +33,12 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
                 
-                // Trigger on selected code
-                const selection = editor.selection;
-                if (selection.isEmpty) {
-                    vscode.window.showInformationMessage('Please, select code to analyze and try again.');
-                    return;
-                }
+		// Trigger on selected code
+		const selection = editor.selection;
+		if (selection.isEmpty) {
+			vscode.window.showInformationMessage('Please, select code to analyze and try again.');
+			return;
+		}
 
 		const code = editor.document.getText(selection);
 
@@ -82,6 +82,8 @@ export function activate(context: vscode.ExtensionContext) {
 		output.show(true);
 
 		vscode.window.showInformationMessage(message);
+		
+		panel_provider.updateAnalysisResult(message);
 	});
 
 	context.subscriptions.push(hello, analyze);
