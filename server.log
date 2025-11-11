@@ -1,0 +1,17 @@
+nohup: ignoring input
+/opt/conda/lib/python3.10/site-packages/transformers/utils/hub.py:110: FutureWarning: Using `TRANSFORMERS_CACHE` is deprecated and will be removed in v5 of Transformers. Use `HF_HOME` instead.
+  warnings.warn(
+[INFO] Loading model...
+Loading checkpoint shards:   0%|          | 0/3 [00:00<?, ?it/s]Loading checkpoint shards:  33%|███▎      | 1/3 [00:00<00:00,  7.72it/s]Loading checkpoint shards:  67%|██████▋   | 2/3 [00:00<00:00,  7.26it/s]Loading checkpoint shards: 100%|██████████| 3/3 [00:00<00:00,  9.24it/s]
+[INFO] Starting server at http://0.0.0.0:5000 ...
+ * Serving Flask app 'serve'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.17.0.2:5000
+[33mPress CTRL+C to quit[0m
+The attention mask is not set and cannot be inferred from input because pad token is same as eos token. As a consequence, you may observe unexpected behavior. Please pass your input's `attention_mask` to obtain reliable results.
+127.0.0.1 - - [11/Nov/2025 00:48:39] "POST /analyze HTTP/1.1" 200 -
+127.0.0.1 - - [11/Nov/2025 00:48:56] "POST /analyze HTTP/1.1" 200 -
+127.0.0.1 - - [11/Nov/2025 00:54:43] "POST /analyze HTTP/1.1" 200 -

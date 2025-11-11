@@ -11,3 +11,6 @@ tqdm
 huggingface_hub
 dotenv
 requests
+fastapi
+uvicorn
+flask
