@@ -5,3 +5,5 @@ data/labeled/
 *.safetensors
 __pycache__/
 .env
+test-code-performance-analyzer/
+run_container_linux.sh
