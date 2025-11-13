@@ -10,4 +10,5 @@ docker run -it --platform linux/amd64 \
   -v "$(pwd)":/app \
   -v ~/.cache/huggingface:/root/.cache/huggingface \
   -w /app \
+  -e HF_HOME=/root/.cache/huggingface \
   cpa bash

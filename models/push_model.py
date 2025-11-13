@@ -10,7 +10,7 @@ if not HF_TOKEN:
     raise ValueError("Missing HF_TOKEN in .env file")
 
 
-LOCAL_MODEL_DIR = "models/student/base"
+LOCAL_MODEL_DIR = "models/student/tuned"
 TMP_MODEL_DIR = "/tmp/student_model" 
 REPO_ID = "philippesic/cpa"
 
