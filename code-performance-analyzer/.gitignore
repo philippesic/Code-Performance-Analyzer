@@ -1,0 +1,63 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-debug.log
+
+# Lockfiles (optional)
+# Uncomment if you want to ignore lockfiles
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Build output
+dist/
+out/
+lib/
+build/
+*.vsix
+
+# TypeScript / transpilation
+*.tsbuildinfo
+
+# VSCode
+.vscode/
+.vscode-test/
+
+# Environment
+.env
+.env.*.local
+.env.local
+
+# Testing / coverage
+coverage/
+.nyc_output/
+jest.config.js.snap
+
+# IDEs / editors
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Misc caches
+.cache/
+.parcel-cache/
+.rpt2_cache/
+*.tmp
+*.temp
+
+# Generated files
+*.map
+*.bak
+
+# Vim swap files
+.*.swp
