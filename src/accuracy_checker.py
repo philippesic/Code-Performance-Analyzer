@@ -1,6 +1,66 @@
-#Comparing our model's ouput with DeepSeek's output to measure accuracy.
+import argparse, requests, time, json, difflib, sys
 
-import difflib
+OUR_URL = "http://127.0.0.1:5000/analyze"
+OLLAMA_URL = "http://host.docker.internal:11434/api/generate"
+OUR_OUTPUT = "./our_model_output.txt"
+DEEPSEEK_OUTPUT = "./deepseek_output.txt"
+
+PROMPTS = [
+    "def find_max(nums): return max(nums)",
+    "def print_pairs(nums):\n    for i in nums:\n        for j in nums:\n            print(i, j)",
+    "def binary_search(arr, target):\n    low, high = 0, len(arr)-1\n    while low <= high:\n        mid = (low + high)//2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
+    "def sum_matrix(matrix):\n    total = 0\n    for row in matrix:\n        for val in row:\n            total += val\n    return total",
+    "def reverse_string(s):\n    return s[::-1]",
+    "def factorial(n):\n    if n == 0:\n        return 1\n    else:\n        return n * factorial(n-1)",
+    "def unique_elements(nums):\n    seen = set()\n    for n in nums:\n        seen.add(n)\n    return list(seen)",
+    "def sort_then_sum(nums):\n    nums.sort()\n    return sum(nums)",
+    "def nested_triple(nums):\n    for i in nums:\n        for j in nums:\n            for k in nums:\n                print(i, j, k)",
+    "def find_duplicate(nums):\n    for i in range(len(nums)):\n        for j in range(i+1, len(nums)):\n            if nums[i] == nums[j]:\n                return True\n    return False"
+]
+
+def query_our_model(code):
+    try:
+        r = requests.post(
+            OUR_URL,
+            json={"code": code},
+            timeout=60
+        )
+        if r.status_code == 200:
+            data = r.json()
+            return data.get("complexity", "").strip()
+        else:
+            return f"Error {r.status_code}"
+    except Exception as e:
+        return f"Error: {e}"
+
+def query_deepseek_ollama(prompt, retries=3, backoff=1.0):
+    payload = {
+        "model": "deepseek-coder-v2",
+        "prompt": (
+            "Analyze the following Python function and respond ONLY with its Big-O time complexity and nothing else (e.g. O(n)):\n\n"
+            f"{prompt}\n\nComplexity:"
+        ),
+        "stream": False,
+        "temperature": 0.2
+    }
+    headers = {"Content-Type": "application/json"}
+
+    for attempt in range(retries):
+        try:
+            r = requests.post(OLLAMA_URL, json=payload, headers=headers, timeout=120)
+            if r.status_code == 200:
+                data = r.json()
+                if "response" in data:
+                    return data["response"].strip()
+                elif "output" in data:
+                    return data["output"].strip()
+            else:
+                print(f"{r.status_code}")
+        except Exception as e:
+            print(f"Attempt {attempt+1} failed: {e}")
+        time.sleep(backoff * (attempt + 1))
+
+    return f"Ollama failed after {retries} retries"
 
 def compare_model_accuracy():
     #Try to read both of the files which is our model's output and DeepSeek output
@@ -97,6 +157,39 @@ def compare_model_accuracy():
     print(f"Overall Rating: {rating}")
     print("=" * 50)
     
-#Main Function
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run model accuracy comparison.")
+    parser.add_argument("--ours", type=str, default="true", help="Run our model (true/false)")
+    parser.add_argument("--deepseek", type=str, default="true", help="Run DeepSeek (true/false)")
+    parser.add_argument("--compare-only", type=str, default="false", help="Only compare existing files")
+
+    args = parser.parse_args()
+    ours_flag = args.ours.lower() == "true"
+    deepseek_flag = args.deepseek.lower() == "true"
+    compare_only = args.compare_only.lower() == "true"
+
+    if compare_only:
+        print("Comparison only\n")
+        compare_model_accuracy()
+        sys.exit(0)
+
+    print(f"\n[CONFIG] ours={ours_flag}, deepseek={deepseek_flag}\n")
+
+    if ours_flag:
+        with open(OUR_OUTPUT, "w", encoding="utf-8") as f_ours:
+            for i, code in enumerate(PROMPTS, 1):
+                print(f"[{i}/{len(PROMPTS)}] CPA Running")
+                ours = query_our_model(code)
+                print(f" → {ours}\n")
+                f_ours.write(ours + "\n")
+
+    if deepseek_flag:
+        with open(DEEPSEEK_OUTPUT, "w", encoding="utf-8") as f_deep:
+            for i, code in enumerate(PROMPTS, 1):
+                print(f"[{i}/{len(PROMPTS)}] DeepSeek Running")
+                deep = query_deepseek_ollama(code)
+                print(f" → {deep}\n")
+                f_deep.write(deep + "\n")
+
+    print("\nDone\n")
     compare_model_accuracy()

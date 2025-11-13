@@ -7,3 +7,4 @@ __pycache__/
 .env
 test-code-performance-analyzer/
 run_container_linux.sh
+server.log
