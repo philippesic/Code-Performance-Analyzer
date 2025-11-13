@@ -1,6 +1,7 @@
 {
     "name": "code-performance-analyzer",
-    "displayName": "Code Perfomance Analyze",
+    "publisher": "cpa-dev",
+    "displayName": "Code Performance Analyzer",
     "description": "Analyze code performance with estimated Big O complexity and optimization tips.",
     "version": "0.0.1",
     "engines": {
@@ -9,7 +10,9 @@
     "categories": [
         "Other"
     ],
-    "activationEvents": [],
+    "activationEvents": [
+        "*"
+    ],
     "main": "./dist/extension.js",
     "contributes": {
         "commands": [
