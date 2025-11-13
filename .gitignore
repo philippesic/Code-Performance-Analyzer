@@ -5,3 +5,4 @@ data/labeled/
 *.safetensors
 __pycache__/
 .env
+server.log
