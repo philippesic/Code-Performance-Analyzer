@@ -4,7 +4,7 @@
   ],
   "attention_dropout": 0.1,
   "bos_token_id": 0,
-  "dtype": "float32",
+  "dtype": "float16",
   "embedding_dropout": 0.1,
   "eos_token_id": 0,
   "hidden_act": "gelu_pytorch_tanh",
