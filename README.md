@@ -1,6 +1,6 @@
-# CPA
+# Code Performance Analyzer
 
-Test Model: `python src/complexity.py <code>`
+## Containers:
 
 Building Image:
 
@@ -12,39 +12,55 @@ Mac: `docker build --platform=linux/amd64 -t cpa .`
 
 Build Container:
 
-PC: `run_container_win.bat`
+PC: `build_container_win.bat`
 
-Mac: `run_container_mac.sh`
+Mac: `build_container_mac.sh`
 
 --
 
 Reenter Container:
 
+`run_container.bat`
+
+Or
+
 `docker start -ai cpa-dev`
 
-Models:
+## Models:
 
 Complexity Model: starcoder2:3b
 
 Teacher: deepseek-coder-v2:16b
 
-Push: Run push_model
-Pull: `cd models/student && git clone https://huggingface.co/philippesic/cpa`
+Push: Run `push_model.py`
 
-## INTEGRATION (Juan):
-For integration I created a stub server that serves the same response as the backend does, this way I avoid waiting times and downloading the whole fine-tuned model on my laptop. This is not to be used in reality. 
-- To finish integrating, **update the `API_BASE_URL` constant in `./code-performance-analyzer/src/extension.ts` to the url of the backend server.**
+Pull Safetensors: `cd src/model/models/student && git clone https://huggingface.co/philippesic/cpa`
 
-## Running the frontend:
-To run the frontend:
-1. Setup and run the backend.
-2. In the `./code-performance-analyzer` directory, run: `npm run compile`.
-3. In visual studio open `./code-performance-analyzer/src/extension.ts`.
-4. In visual studio, press F5 or trigger the "Debug: Start Debugging" while having the `extension.ts` file open. Visual studio will open a new window in the `test-code-performance-analyzer` directory, with the extension loaded in the environment.
-5. Trigger the commands you want in the new debug window, there is a sample python function to quickly test the outputs.
+## Hosting the model locally:
 
+1. Run the command from `server.info` from the container root. Containers are setup to automatically port map. Note that the server may take a long time to start.
 
-# test-code-performance-analyzer README
+2. Test the server response via a curl: `curl -X POST http://127.0.0.1:5000/analyze -H "Content-Type: application/json" -d '{"code": "def loop(n):\n for i in range(n): pass"}'`
+
+3. Running the model locally requires 11gb vram. Support for 8gb requires retraining a lighter model.
+
+4. Currently, the only way to stop the server is via `kill <pid>` (`ps aux | grep python`)
+
+## Running the extension environment:
+
+1. Setup and run the backend
+
+2. `npm run compile` in the `src` directory
+
+3. In vscode open `.src/extension.ts`
+
+4. Start debugging fith F5. If prompted, select `VSCode Extention Development` as your debugger
+
+## Backend README
+
+todo
+
+## test-code-performance-analyzer README
 
 This is the README for your extension "test-code-performance-analyzer". After writing up a brief description, we recommend including the following sections.
 
