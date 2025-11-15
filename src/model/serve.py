@@ -7,14 +7,13 @@ MODEL_PATH = "./models/student/cpa"
 MAX_INPUT_LENGTH = 512  # prevent too-long inputs
 
 # Load model & tokenizer
-print("Loading model...")
+print("Loading model")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 model = AutoModelForCausalLM.from_pretrained(MODEL_PATH)
 model.eval()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 
-# Ensure padding works correctly
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -27,7 +26,7 @@ def analyze():
     if not code_snippet:
         return jsonify({"error": "Missing 'code' field"}), 400
 
-    # Minimal prompt just for complexity
+    # Minimal prompt just for complexity analysis
     prompt = f"Analyze the following Python function and respond ONLY with its Big-O time complexity:\n\n{code_snippet}\nComplexity:"
 
     try:
@@ -38,7 +37,6 @@ def analyze():
             max_length=MAX_INPUT_LENGTH
         ).to(device)
 
-        # Set a max length for generation relative to input
         max_length = inputs["input_ids"].shape[1] + 16
 
         with torch.no_grad():
@@ -51,7 +49,7 @@ def analyze():
             )
 
         decoded = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-        # Extract only the complexity string after the prompt
+
         complexity = decoded[len(prompt):].strip().split("\n")[0]
 
         return jsonify({"complexity": complexity})
