@@ -3,7 +3,7 @@ import { CpaPanelProvider } from './cpaPanelProvider';
 
 // ================== DEFINITIONS ================== 
 // API configuration
-const API_BASE_URL = 'http://localhost:5000'; // this is to be changed to the real server
+const API_BASE_URL = 'http://127.0.0.1:5000/analyze'; // this is to be changed to the real server
 const API_TIMEOUT_MS = 60000; // 1 min
 
 // define a type for the decoration for it to be displayed in the complexity

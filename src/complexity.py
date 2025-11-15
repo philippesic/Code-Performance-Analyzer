@@ -2,7 +2,7 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 import sys
 
-MODEL_PATH = "./models/student/tuned"
+MODEL_PATH = "./models/student/cpa"
 
 print("Loading model")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
