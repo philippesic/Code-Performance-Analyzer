@@ -15,3 +15,5 @@ fastapi
 uvicorn
 flask
 protobuf
+matplotlib
+numpy
