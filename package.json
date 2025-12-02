@@ -19,7 +19,15 @@
             },
             {
                 "command": "code-performance-analyzer.analyze",
-                "title": "Analyze Code Complexity"
+                "title": "CPA: Analyze Code Complexity"
+            },
+            {
+                "command": "code-performance-analyzer.downloadResults",
+                "title": "CPA: Download Analysis Results (csv)"
+            },
+            {
+                "command": "code-performance-analyzer.clearResults",
+                "title": "CPA: Clear Analysis Results"
             }
         ], 
         "menus": {

@@ -36,6 +36,12 @@ ENV HF_HUB_DISABLE_SYMLINKS_WARNING=1
 # ========================
 COPY src/ src/
 
+
+# ========================
+# Create results directory for epxort
+RUN mkdir -p /app/results
+
+# ========================
 # ---- ADD THIS LINE ----
 RUN echo "--- START serve.py ---" && cat src/model/serve.py && echo "--- END serve.py ---"
 # -----------------------

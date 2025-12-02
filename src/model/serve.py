@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import torch
+import csv
+import os
+from datetime import datetime
 import pathlib
 import asyncio
 import json
@@ -8,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForCausalLM
+
 
 # Fix dual import for relative path for cluster vs dev container
 try:
@@ -18,6 +22,19 @@ except ImportError:
 # Fix cluster path
 BASE_DIR = pathlib.Path(__file__).parent
 MODEL_PATH = BASE_DIR / "models" / "student" / "cpa"
+
+# paths for export feature
+EXPORT_DIR = BASE_DIR / "exported_results"
+EXPORT_FILE = EXPORT_DIR / "analysis_result.csv"
+
+# create directory for results
+os.makedirs(EXPORT_DIR, exist_ok=True)
+
+# initialize csv export file wit headers
+if not EXPORT_FILE.exists():
+    with open(EXPORT_FILE, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerow(['timestamp', 'code', 'complexity', 'execution_time_ms'])
 # ---------------------------
 
 MAX_INPUT_LENGTH = 512
@@ -64,7 +81,19 @@ class CodeRequest(BaseModel):
     code: str
     complexity: str = ""
 
+def save_results(code: str, complexity: str, execution_time: float = 0.0):
+    """ Save analysis result to CSV file for analysis export featyre - non-blocking"""
+    try:
+        with open(EXPORT_FILE, 'a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            timestamp = datetime.now().strftime('%Y=%m-%d %H:%M:%S')
+            code = code.replace('\n', '\\n').replace('\r', '')
+            writer.writerow([timestamp, code, complexity, execution_time])
+    except Exception as e:
+        print(f"[WARNING] Failed to save result to CSV file: {e}")
+
 def run_analysis(code_snippet: str) -> dict:
+
     prompt = (
         f"Analyze the following Python function and respond ONLY with its Big-O time complexity:\n\n"
         f"{code_snippet}\nComplexity:"
@@ -94,6 +123,7 @@ def run_analysis(code_snippet: str) -> dict:
         decoded = tokenizer.decode(output_ids[0], skip_special_tokens=True)
         complexity = decoded[len(prompt):].strip().split("\n")[0]
 
+        save_result(code_snippet, complexity)
         return {"complexity": complexity}
 
     except Exception as e:
@@ -217,6 +247,32 @@ def generate_test(req: CodeRequest):
 async def health():  # async since we ping periodically
     return {"status": "ok"}
 
+
+# New endpoints for export feature
+@app.get("/download-results")
+async def download_results():
+    """Downloads analysis results as CSV"""
+    from fastapi.responses import FileResponse
+    
+    if not EXPORT_FILE.exists():
+        raise HTTPException(status_code=404, detail="No results found")
+
+    return FileResponse(
+        path=str(EXPORT_FILE),
+        media_type='text/csv',
+        filename=f'cpa_results_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+    )
+
+@app.post("/clear-results")
+async def clear_results():
+    """Clears all the saved results"""
+    try:
+        with open(EXPORT_FILE, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writenow(['timestamp', 'code', 'complexity', 'execution_time_ms'])
+        return {"message": "Results cleared successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=505, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

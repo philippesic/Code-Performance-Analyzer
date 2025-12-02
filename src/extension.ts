@@ -3,8 +3,8 @@ import { CpaPanelProvider } from './cpaPanelProvider';
 
 // ================== DEFINITIONS ================== 
 // API configuration
-const API_BASE_URL = 'http://localhost:5000'; // this is to be changed to the real server
-const API_TIMEOUT_MS = 6000000; // 1 min
+const API_BASE_URL = 'http://localhost:5000';
+const API_TIMEOUT_MS = 600000; // 10 min
 
 // define a type for the decoration for it to be displayed in the complexity
 const complexityDecorationType = vscode.window.createTextEditorDecorationType({
@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.window.showInformationMessage('Hello from Code Performance Analyzer!');
 	});
 
-	// Command: Analyze Code, now with async
+	// Command: Analyze Code
 	const analyze = vscode.commands.registerCommand('code-performance-analyzer.analyze', async () => {
 		console.log('🔍 ANALYZE COMMAND STARTED - New version');
 		const editor = vscode.window.activeTextEditor;
@@ -152,7 +152,91 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		});
 	});
-	context.subscriptions.push(hello, analyze);
+
+	// Command: Export to CSV feature
+	const downloadResults = vscode.commands.registerCommand(
+		'code-performance-analyzer.downloadResults',
+		async() => {
+			try {
+				const response = await fetch(`${API_BASE_URL}/download-results`, {
+					method: 'GET'
+				});
+				
+				if (!response.ok) {
+					if (response.status === 404) {
+						vscode.window.showWarningMessage('No analysis results found. Analyze some code and try again.');
+						return;
+					}
+					throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				}
+
+				// Get csv data
+				const blob = await response.blob();
+				const arrayBuffer = await blob.arrayBuffer();
+				const buffer = Buffer.from(arrayBuffer);
+
+				// Ask user where to save
+				const saveUri = await vscode.window.showSaveDialog({
+					defaultUri: vscode.Uri.file(
+						`cpa_results_${new Date().toISOString().split('T')[0]}.csv`
+					),
+					filters: {
+						'CSV Files': ['csv'],
+						'All Files': ['*']
+					}
+				});
+
+				if (saveUri) {
+					await vscode.workspace.fs.writeFile(saveUri, buffer);
+
+					vscode.window.showInformationMessage(
+						`Results saved to ${saveUri.fsPath}`,
+						'Open File'
+					).then(selection => {
+						if (selection === 'Open File') {
+							vscode.commands.executeCommand('vscode.open', saveUri);
+						}
+					});
+				}
+			
+			} catch (error) {
+				vscode.window.showErrorMessage(
+					`Failed to download results: ${error instanceof Error ? error.message : 'Unknown Error'}`
+				);
+			}
+		}
+	);
+
+	const clearResults = vscode.commands.registerCommand(
+		'code-performance-analyzer.clearResults',
+		async() => {
+			const confirm = await vscode.window.showWarningMessage(
+				'Are you sure you want to clear all saved analysis results?',
+				{modal: true},
+				'Yes', 'No'
+			);
+
+			if (confirm === 'Yes') {
+				try {
+					const response = await fetch(`${API_BASE_URL}/clear-results`, {
+						method: 'POST'
+					});
+
+					if (!response.ok) {
+						throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+					}
+
+					vscode.window.showInformationMessage('Analysis results cleared successfully');
+				} catch (error) {
+					vscode.window.showErrorMessage(
+						`Failed to clear results: ${error instanceof Error ? error.message : 'Unknown Error'}`
+					);
+				}
+			}
+		}
+	);
+	
+	context.subscriptions.push(hello, analyze, downloadResults, clearResults);
 }
 
 
