@@ -74,3 +74,4 @@ test-code-performance-analyzer/
 run_container_linux.sh
 server.log
 mock_server.py
+src/model/exported_results/
