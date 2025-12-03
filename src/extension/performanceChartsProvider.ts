@@ -2,9 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-
-export class CpaPanelProvider implements vscode.WebviewViewProvider {
-    public static readonly id = 'cpa-panel'; // must match id in package.json
+export class PerformanceChartsProvider implements vscode.WebviewViewProvider {
+    public static readonly id = 'cpa-output-charts'; // must match id in package.json
 
     private _view?: vscode.WebviewView; // stores the webview
 
@@ -30,18 +29,18 @@ export class CpaPanelProvider implements vscode.WebviewViewProvider {
         webviewView.webview.html = this._getHtmlForWebview(webviewView.webview, nonce);
     }
 
-    public updateAnalysisResult(message: string) {
+    public updateChartData(chartData: any) {
         if (this._view) {
             this._view.webview.postMessage({
-                command: 'updateResult',
-                text: message
+                command: 'updateChart',
+                chartData: chartData
             });
         }
     }
 
     private _getHtmlForWebview(webview: vscode.Webview, nonce: string): string {
         // Only use the reliable extensionUri path
-        const htmlPath = vscode.Uri.joinPath(this._extensionUri, 'src', 'extension', 'panel.html').fsPath;
+        const htmlPath = vscode.Uri.joinPath(this._extensionUri, 'src', 'extension', 'charts.html').fsPath;
 
         // Read the file content
         let html: string;
@@ -53,10 +52,10 @@ export class CpaPanelProvider implements vscode.WebviewViewProvider {
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
-    <title>CPA Panel - Error</title>
+    <title>Performance Charts - Error</title>
 </head>
 <body>
-    <h2>Error: Could not read panel.html</h2>
+    <h2>Error: Could not read charts.html</h2>
     <p>Path: ${htmlPath}</p>
     <p>Error: ${error instanceof Error ? error.message : String(error)}</p>
 </body>
@@ -70,7 +69,7 @@ export class CpaPanelProvider implements vscode.WebviewViewProvider {
     }
 }
 
-// funtion creates a unique nonce for inline scripts
+// function creates a unique nonce for inline scripts
 function getNonce() {
     let text = '';
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

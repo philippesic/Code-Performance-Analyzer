@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-{{nonce}}';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Generation</title>
+    <style>
+        body {
+            padding: 10px;
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+        }
+
+        h1 {
+            color: var(--vscode-editor-foreground);
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .section {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        textarea,
+        input {
+            width: 100%;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            padding: 6px;
+            border-radius: 4px;
+            font-family: var(--vscode-editor-font-family);
+            font-size: var(--vscode-editor-font-size);
+            box-sizing: border-box;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        button:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-container {
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 12px;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        pre {
+            background: var(--vscode-textCodeBlock-background);
+            padding: 8px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 0;
+        }
+
+        .status-message {
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+        }
+
+        .status-info {
+            background: var(--vscode-inputValidation-infoBackground);
+            border: 1px solid var(--vscode-inputValidation-infoBorder);
+        }
+
+        .status-error {
+            background: var(--vscode-inputValidation-errorBackground);
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+        }
+
+        .status-success {
+            background: var(--vscode-inputValidation-warningBackground);
+            border: 1px solid var(--vscode-inputValidation-warningBorder);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Generate Test Files</h1>
+
+    <div class="section">
+        <label for="codeInput">Code to Test:</label>
+        <textarea id="codeInput" placeholder="Paste your Python function here..."></textarea>
+    </div>
+
+    <div class="section">
+        <label for="complexityInput">Complexity Hint (optional):</label>
+        <input type="text" id="complexityInput" placeholder="e.g., O(n), O(n^2), leave empty to auto-detect">
+    </div>
+
+    <div class="section">
+        <button id="generateBtn">Generate Test File</button>
+    </div>
+
+    <div id="statusMessage"></div>
+
+    <div id="resultContainer" style="display: none;">
+        <div class="result-container">
+            <div class="result-header">
+                <strong>Generated Test File</strong>
+                <button id="saveBtn">Save Test File</button>
+            </div>
+            <pre id="testFileContent"></pre>
+        </div>
+    </div>
+
+    <script nonce="{{nonce}}">
+        const vscode = acquireVsCodeApi();
+
+        const codeInput = document.getElementById('codeInput');
+        const complexityInput = document.getElementById('complexityInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const resultContainer = document.getElementById('resultContainer');
+        const testFileContent = document.getElementById('testFileContent');
+
+        let currentTestFile = null;
+        let currentFilename = 'test_performance.py';
+
+        generateBtn.addEventListener('click', () => {
+            const code = codeInput.value.trim();
+            if (!code) {
+                showStatus('Please enter some code to generate tests for.', 'error');
+                return;
+            }
+
+            const complexity = complexityInput.value.trim();
+
+            // Disable button and show loading
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
+
+            // Send message to extension
+            vscode.postMessage({
+                command: 'generateTest',
+                code: code,
+                complexity: complexity
+            });
+        });
+
+        saveBtn.addEventListener('click', () => {
+            if (currentTestFile) {
+                vscode.postMessage({
+                    command: 'saveTestFile',
+                    content: currentTestFile,
+                    filename: currentFilename
+                });
+            }
+        });
+
+        function showStatus(message, type) {
+            statusMessage.innerHTML = '';
+            const div = document.createElement('div');
+            div.className = 'status-message status-' + type;
+            div.textContent = message;
+            statusMessage.appendChild(div);
+        }
+
+        function clearStatus() {
+            statusMessage.innerHTML = '';
+        }
+
+        // Listen for messages from the extension
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.command) {
+                case 'generatingTest':
+                    showStatus(message.message, 'info');
+                    resultContainer.style.display = 'none';
+                    break;
+
+                case 'testGenerated':
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = 'Generate Test File';
+
+                    currentTestFile = message.testFile;
+                    currentFilename = `test_${message.functionName || 'performance'}.py`;
+
+                    testFileContent.textContent = message.testFile;
+                    resultContainer.style.display = 'block';
+
+                    showStatus(message.message || 'Test file generated successfully!', 'success');
+                    break;
+
+                case 'testGenerationError':
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = 'Generate Test File';
+
+                    showStatus('Error: ' + message.error, 'error');
+                    resultContainer.style.display = 'none';
+                    break;
+            }
+        });
+    </script>
+</body>
+
+</html>

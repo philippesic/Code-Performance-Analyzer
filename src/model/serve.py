@@ -123,7 +123,7 @@ def run_analysis(code_snippet: str) -> dict:
         decoded = tokenizer.decode(output_ids[0], skip_special_tokens=True)
         complexity = decoded[len(prompt):].strip().split("\n")[0]
 
-        save_result(code_snippet, complexity)
+        save_results(code_snippet, complexity)
         return {"complexity": complexity}
 
     except Exception as e:
@@ -269,7 +269,7 @@ async def clear_results():
     try:
         with open(EXPORT_FILE, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
-            writer.writenow(['timestamp', 'code', 'complexity', 'execution_time_ms'])
+            writer.writerow(['timestamp', 'code', 'complexity', 'execution_time_ms'])
         return {"message": "Results cleared successfully"}
     except Exception as e:
         raise HTTPException(status_code=505, detail=str(e))

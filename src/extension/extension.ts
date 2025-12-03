@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { CpaPanelProvider } from './cpaPanelProvider';
+import { PerformanceChartsProvider } from './performanceChartsProvider';
+import { TestGenProvider } from './testGenProvider';
 
 // ================== DEFINITIONS ================== 
 // API configuration
@@ -31,9 +33,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 	// register the provider for the panel view
 	const panel_provider = new CpaPanelProvider(context.extensionUri);
+	const charts_provider = new PerformanceChartsProvider(context.extensionUri);
+	const testgen_provider = new TestGenProvider(context.extensionUri);
 
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(CpaPanelProvider.id, panel_provider)
+		vscode.window.registerWebviewViewProvider(CpaPanelProvider.id, panel_provider),
+		vscode.window.registerWebviewViewProvider(PerformanceChartsProvider.id, charts_provider),
+		vscode.window.registerWebviewViewProvider(TestGenProvider.id, testgen_provider)
 	);
 	// Command: Hello World
 	const hello = vscode.commands.registerCommand('code-performance-analyzer.helloWorld', () => {
@@ -73,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
 				const result = await fetchAnalysis(code);
 
 				const decorationMessage = `Complexity: ${result.complexity}`;
-				const message = `Estimated Time Complexity: ${result.complexity}\nDetected Loops: ${result.loops_detected}, Functions: ${result.functions_detected}`;
+				const message = `Estimated Time Complexity: ${result.complexity}`;
 
 				// decoration
 				const decoration = {
@@ -88,13 +94,10 @@ export function activate(context: vscode.ExtensionContext) {
 				// apply decoration to editor
 				editor.setDecorations(complexityDecorationType, [decoration]);
 
-				// get output to vscode output panel
 				output.appendLine('='.repeat(50));
 				output.appendLine(`[${new Date().toLocaleTimeString()}] Code Analysis Results`);
 				output.appendLine('='.repeat(50));
 				output.appendLine(`Complexity: ${result.complexity}`);
-				output.appendLine(`Loops detected: ${result.loops_detected}`);
-				output.appendLine(`Functions detected: ${result.functions_detected}`);
 				output.appendLine(message);
 
 				//include optional explanation from backend result
@@ -107,7 +110,8 @@ export function activate(context: vscode.ExtensionContext) {
 				const chartData = generateChartData(result.complexity);
 
 				vscode.window.showInformationMessage(`Complexity: ${result.complexity}`);
-				panel_provider.updateAnalysisResult({ message, chartData });
+				panel_provider.updateAnalysisResult(message);
+				charts_provider.updateChartData(chartData);
 
 			} catch (error) {
 				// Error handling - fallback to local heuristics and log error
@@ -121,7 +125,7 @@ export function activate(context: vscode.ExtensionContext) {
 				const fallbackResult = localHeuristicAnalysis(code);
 
 				const decorationMessage = `Complexity: ${fallbackResult.complexity}`;
-				const message = `Estimated Time Complexity: ${fallbackResult.complexity}\nDetected Loops: ${fallbackResult.loops_detected}, Functions: ${fallbackResult.functions_detected}`;
+				const message = `Estimated Time Complexity: ${fallbackResult.complexity}`;
 
 				// create decoration
 				const decoration = {
@@ -138,6 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 				output.appendLine('');
 				output.appendLine('LOCAL ANALYSIS RESULTS:');
+				output.appendLine(`Complexity: ${fallbackResult.complexity}`);
 				output.appendLine(message);
 				output.appendLine('='.repeat(50));
 				output.show(true);
@@ -159,12 +164,12 @@ export function activate(context: vscode.ExtensionContext) {
 	// Command: Export to CSV feature
 	const downloadResults = vscode.commands.registerCommand(
 		'code-performance-analyzer.downloadResults',
-		async() => {
+		async () => {
 			try {
 				const response = await fetch(`${API_BASE_URL}/download-results`, {
 					method: 'GET'
 				});
-				
+
 				if (!response.ok) {
 					if (response.status === 404) {
 						vscode.window.showWarningMessage('No analysis results found. Analyze some code and try again.');
@@ -201,7 +206,7 @@ export function activate(context: vscode.ExtensionContext) {
 						}
 					});
 				}
-			
+
 			} catch (error) {
 				vscode.window.showErrorMessage(
 					`Failed to download results: ${error instanceof Error ? error.message : 'Unknown Error'}`
@@ -212,10 +217,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 	const clearResults = vscode.commands.registerCommand(
 		'code-performance-analyzer.clearResults',
-		async() => {
+		async () => {
 			const confirm = await vscode.window.showWarningMessage(
 				'Are you sure you want to clear all saved analysis results?',
-				{modal: true},
+				{ modal: true },
 				'Yes', 'No'
 			);
 
@@ -238,10 +243,10 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	);
-	
+
 	context.subscriptions.push(hello, analyze, downloadResults, clearResults);
 }
-	
+
 
 // API fetch function
 async function fetchAnalysis(code: string): Promise<AnalysisResponse> {

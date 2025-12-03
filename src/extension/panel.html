@@ -1,242 +1,254 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'nonce-{{nonce}}' https://cdn.jsdelivr.net; connect-src 'none';">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-{{nonce}}';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis Panel</title>
     <style>
-        body { 
-            padding: 10px; 
-            font-family: var(--vscode-font-family); 
-            color: var(--vscode-foreground); 
+        body {
+            padding: 10px;
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
             background-color: var(--vscode-editor-background);
+            margin: 0;
         }
-        h1 { 
-            color: var(--vscode-editor-foreground); 
-            margin: 0 0 8px; 
-            font-size: 16px; 
+
+        h1 {
+            color: var(--vscode-editor-foreground);
+            margin: 0 0 8px;
+            font-size: 16px;
         }
-        .section { 
-            margin-bottom: 12px; 
+
+        .section {
+            margin-bottom: 12px;
         }
-        #analysis-result { 
-            white-space: pre-wrap; 
-            margin-bottom: 12px; 
+
+        .placeholder {
+            text-align: center;
+            padding: 20px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        #content {
+            display: none;
+        }
+
+        .complexity-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 18px;
+            background: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            border: 2px solid var(--vscode-badge-background);
+            margin-bottom: 4px;
+        }
+
+        .complexity-badge.good {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.5);
+            color: rgb(16, 185, 129);
+        }
+
+        .complexity-badge.moderate {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.5);
+            color: rgb(245, 158, 11);
+        }
+
+        .complexity-badge.poor {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: rgb(239, 68, 68);
+        }
+
+        .rating-text {
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .rating-text.good {
+            color: rgb(16, 185, 129);
+        }
+
+        .rating-text.moderate {
+            color: rgb(245, 158, 11);
+        }
+
+        .rating-text.poor {
+            color: rgb(239, 68, 68);
+        }
+
+        .detail-box {
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
             padding: 8px;
-            background: var(--vscode-sideBar-background);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+        }
+
+        .detail-label {
+            color: var(--vscode-descriptionForeground);
+            font-size: 13px;
+        }
+
+        .detail-value {
+            color: var(--vscode-foreground);
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .explanation-box {
+            background: var(--vscode-textBlockQuote-background);
+            border-left: 3px solid var(--vscode-textBlockQuote-border);
+            padding: 8px;
+            margin-top: 8px;
             border-radius: 4px;
-        }
-        .charts-grid { 
-            display: grid; 
-            grid-template-columns: 1fr; 
-            gap: 12px; 
-        }
-        .chart-card { 
-            background: var(--vscode-editor-background); 
-            border: 1px solid var(--vscode-panel-border); 
-            border-radius: 6px; 
-            padding: 8px; 
-        }
-        .row { 
-            display: flex; 
-            gap: 8px; 
-            align-items: center; 
-            flex-wrap: wrap; 
-        }
-        select, button { 
-            background: var(--vscode-input-background); 
-            color: var(--vscode-input-foreground); 
-            border: 1px solid var(--vscode-input-border); 
-            padding: 4px 6px; 
-            border-radius: 4px; 
-        }
-        details { 
-            border: 1px solid var(--vscode-panel-border); 
-            border-radius: 6px; 
-            padding: 6px; 
-            background: var(--vscode-editor-background); 
-        }
-        summary { 
-            cursor: pointer; 
-        }
-        canvas { 
-            width: 100% !important; 
-            height: 240px !important; 
-        }
-        @media (min-width: 900px) {
-            .charts-grid { 
-                grid-template-columns: 1fr 1fr; 
-            }
+            font-size: 13px;
+            line-height: 1.6;
         }
     </style>
 </head>
-<body>
-    <h1>Code Performance Analyzer</h1>
-    <div class="section row">
-        <div>Function:</div>
-        <select id="functionSelect"></select>
-        <button id="exportBtn" title="Export analysis as JSON">Export JSON</button>
-    </div>
-    <p id="analysis-result" class="section">Run an analysis to see results here.</p>
-    <div class="charts-grid section">
-        <div class="chart-card">
-            <div style="margin-bottom:6px;"><strong>Runtime growth vs n</strong></div>
-            <canvas id="lineChart"></canvas>
-        </div>
-    </div>
-    <details class="section" open>
-        <summary><strong>Function details</strong></summary>
-        <div id="functionDetails" style="margin-top:6px;"></div>
-    </details>
 
-    <script nonce="{{nonce}}" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<body>
+    <h1>Code Analysis</h1>
+
+    <div id="placeholder" class="placeholder">
+        Run an analysis to see results here.
+    </div>
+
+    <div id="content">
+        <div class="section">
+            <div class="complexity-badge" id="complexityBadge">O(n)</div>
+            <div class="rating-text" id="performanceRating">Good</div>
+        </div>
+
+        <div class="section">
+            <div class="detail-box">
+                <div class="detail-row">
+                    <span class="detail-label">Time Complexity</span>
+                    <span class="detail-value" id="detailComplexity">-</span>
+                </div>
+            </div>
+
+            <div id="explanationContainer" style="display: none;">
+                <div class="explanation-box" id="explanationText"></div>
+            </div>
+        </div>
+
+        <div class="timestamp" id="timestamp"></div>
+    </div>
+
     <script nonce="{{nonce}}">
         const vscode = acquireVsCodeApi();
 
-        // Initialize chart
-        let lineChart = null;
-        const lineCtx = document.getElementById('lineChart');
-        if (lineCtx) {
-            const themeGrid = getComputedStyle(document.documentElement).getPropertyValue('--vscode-widget-border') || 'rgba(128,128,128,0.3)';
+        function getComplexityClass(complexity) {
+            const comp = complexity.toLowerCase();
+            if (comp.includes('o(1)') || comp.includes('o(log')) {
+                return 'good';
+            } else if (comp.includes('o(n)') && !comp.includes('o(n^') && !comp.includes('o(n²)')) {
+                return 'moderate';
+            } else {
+                return 'poor';
+            }
+        }
 
-            lineChart = new Chart(lineCtx.getContext('2d'), {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    plugins: { 
-                        legend: { display: true }, 
-                        tooltip: { enabled: true } 
-                    },
-                    scales: { 
-                        y: { beginAtZero: true, grid: { color: themeGrid } }, 
-                        x: { grid: { color: themeGrid } } 
-                    }
+        function getPerformanceRating(complexity) {
+            const comp = complexity.toLowerCase();
+            if (comp.includes('o(1)')) {
+                return { label: 'Excellent', class: 'good' };
+            } else if (comp.includes('o(log')) {
+                return { label: 'Very Good', class: 'good' };
+            } else if (comp.includes('o(n)') && !comp.includes('o(n^') && !comp.includes('o(n²)')) {
+                return { label: 'Good', class: 'moderate' };
+            } else if (comp.includes('o(n log n)')) {
+                return { label: 'Fair', class: 'moderate' };
+            } else if (comp.includes('o(n^2)') || comp.includes('o(n²)')) {
+                return { label: 'Poor', class: 'poor' };
+            } else if (comp.includes('o(2^n)')) {
+                return { label: 'Very Poor', class: 'poor' };
+            } else if (comp.includes('o(n!)')) {
+                return { label: 'Critical', class: 'poor' };
+            } else {
+                return { label: 'Unknown', class: 'moderate' };
+            }
+        }
+
+        function updateAnalysis(data) {
+            const placeholder = document.getElementById('placeholder');
+            const content = document.getElementById('content');
+            const complexityBadge = document.getElementById('complexityBadge');
+            const detailComplexity = document.getElementById('detailComplexity');
+            const timestamp = document.getElementById('timestamp');
+            const performanceRating = document.getElementById('performanceRating');
+            const explanationContainer = document.getElementById('explanationContainer');
+            const explanationText = document.getElementById('explanationText');
+
+            // Parse the message
+            const lines = data.text.split('\\n');
+            let complexity = 'O(?)';
+
+            lines.forEach(line => {
+                if (line.includes('Estimated Time Complexity:')) {
+                    complexity = line.split(':')[1].trim();
                 }
             });
-        }
 
-        const functionSelect = document.getElementById('functionSelect');
-        const exportBtn = document.getElementById('exportBtn');
-        const detailsEl = document.getElementById('functionDetails');
-        let lastPayload = null;
+            // Show content, hide placeholder
+            placeholder.style.display = 'none';
+            content.style.display = 'block';
 
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => {
-                if (!lastPayload) return;
-                const blob = new Blob([JSON.stringify(lastPayload, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'cpa-analysis.json';
-                a.click();
-                URL.revokeObjectURL(url);
-            });
-        }
+            // Update complexity badge
+            complexityBadge.textContent = complexity;
+            complexityBadge.className = 'complexity-badge ' + getComplexityClass(complexity);
 
-        function populateFunctionSelect(functions) {
-            if (!functionSelect) return;
-            functionSelect.innerHTML = '';
-            if (!functions || functions.length === 0) {
-                const opt = document.createElement('option');
-                opt.textContent = 'No functions detected';
-                opt.value = '-1';
-                functionSelect.appendChild(opt);
-                functionSelect.disabled = true;
+            // Update detail complexity
+            detailComplexity.textContent = complexity;
+
+            // Update performance rating
+            const rating = getPerformanceRating(complexity);
+            performanceRating.textContent = rating.label;
+            performanceRating.className = 'rating-text ' + rating.class;
+
+            // Update timestamp
+            const now = new Date();
+            timestamp.textContent = 'Analyzed at ' + now.toLocaleTimeString();
+
+            // Handle explanation if available
+            if (data.explanation) {
+                explanationContainer.style.display = 'block';
+                explanationText.textContent = data.explanation;
             } else {
-                functionSelect.disabled = false;
-                functions.forEach((f, idx) => {
-                    const opt = document.createElement('option');
-                    opt.textContent = f.name + (f.isRecursive ? ' (recursive)' : '');
-                    opt.value = String(idx);
-                    functionSelect.appendChild(opt);
-                });
+                explanationContainer.style.display = 'none';
             }
-        }
-
-        function renderFunctionDetails(functions) {
-            if (!detailsEl) return;
-            if (!functions || functions.length === 0) {
-                detailsEl.textContent = 'No functions were detected in the selected code.';
-                return;
-            }
-            detailsEl.innerHTML = '';
-            functions.forEach((f) => {
-                const div = document.createElement('div');
-                div.style.marginBottom = '6px';
-                div.innerHTML = '<strong>' + escapeHtml(f.name) + '</strong>' +
-                    ' — complexity: ' + escapeHtml(f.complexity || '?') +
-                    ', recursive: ' + (f.isRecursive ? 'yes' : 'no') +
-                    ', starts at line: ' + ((f.startLine !== undefined ? f.startLine + 1 : '?'));
-                detailsEl.appendChild(div);
-            });
-        }
-
-        function escapeHtml(text) {
-            if (text === null || text === undefined) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function highlightDataset(datasets, labelToHighlight) {
-            return datasets.map(ds => {
-                const isHi = ds.label === labelToHighlight;
-                return {
-                    ...ds,
-                    borderWidth: isHi ? 3 : 1.5,
-                    borderDash: isHi ? [] : [4,2],
-                    pointRadius: isHi ? 2.5 : 0
-                };
-            });
         }
 
         window.addEventListener('message', event => {
             const message = event.data;
-            switch(message.command) {
+            switch (message.command) {
                 case 'updateResult':
-                    // update text
-                    const resultEl = document.getElementById('analysis-result');
-                    if (resultEl) {
-                        resultEl.textContent = message.text || 'No analysis result available.';
-                    }
-
-                    // update charts if provided
-                    if (message.chartData && lineChart) {
-                        lastPayload = message.chartData;
-                        // line chart
-                        if (message.chartData.line) {
-                            lineChart.data.labels = message.chartData.line.labels || [];
-                            const ds = message.chartData.line.datasets || [];
-                            lineChart.data.datasets = highlightDataset(ds, message.chartData.line.highlight);
-                            lineChart.update();
-                        }
-
-                        // functions
-                        populateFunctionSelect(message.chartData.functions || []);
-                        renderFunctionDetails(message.chartData.functions || []);
-                    }
+                    updateAnalysis(message);
                     break;
             }
         });
-
-        if (functionSelect) {
-            functionSelect.addEventListener('change', () => {
-                if (!lastPayload || !lastPayload.line || !lineChart) return;
-                const selectedIdx = parseInt(functionSelect.value, 10);
-                if (isNaN(selectedIdx) || !lastPayload.functions || !lastPayload.functions[selectedIdx]) {
-                    lineChart.data.datasets = highlightDataset(lastPayload.line.datasets, lastPayload.line.highlight);
-                    lineChart.update();
-                    return;
-                }
-                const fn = lastPayload.functions[selectedIdx];
-                const labelMap = { 'O(1)': 'O(1)', 'O(n)': 'O(n)', 'O(n log n)': 'O(n log n)', 'O(n²)': 'O(n²)', 'O(2^n)': 'O(2^n)', 'O(n!)': 'O(n!)' };
-                const targetLabel = labelMap[fn.complexity] || lastPayload.line.highlight;
-                lineChart.data.datasets = highlightDataset(lastPayload.line.datasets, targetLabel);
-                lineChart.update();
-            });
-        }
     </script>
 </body>
+
 </html>

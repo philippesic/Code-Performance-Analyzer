@@ -29,7 +29,7 @@
                 "command": "code-performance-analyzer.clearResults",
                 "title": "CPA: Clear Analysis Results"
             }
-        ], 
+        ],
         "menus": {
             "editor/context": [
                 {
@@ -40,28 +40,33 @@
             ]
         },
         "viewsContainers": {
-            "activitybar": [ 
+            "activitybar": [
                 {
                     "id": "cpa-sidebar",
                     "title": "Code Performance Analyzer",
                     "icon": "$(watch)"
-                } 
+                }
             ]
         },
         "views": {
-            "cpa-sidebar": [ 
+            "cpa-sidebar": [
                 {
                     "type": "webview",
                     "id": "cpa-panel",
-                    "name": "Analysis Panel"
-                }, 
-                {
-                    "id": "cpa-output-charts",
-                    "name": "Performance Charts"
+                    "name": "Analysis Panel",
+                    "icon": "media/sidebar.svg"
                 },
                 {
+                    "type": "webview",
+                    "id": "cpa-output-charts",
+                    "name": "Performance Charts",
+                    "icon": "media/chart.svg"
+                },
+                {
+                    "type": "webview",
                     "id": "cpa-test-gen",
-                    "name": "Generated Testfiles"
+                    "name": "Generate Testfiles",
+                    "icon": "media/file.svg"
                 }
             ]
         }
