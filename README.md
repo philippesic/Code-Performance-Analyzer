@@ -1,133 +1,95 @@
-# Code Performance Analyzer
+# Code Performance Analyzer (CPA)
 
-## Containers:
+## Overview
 
-Building Image:
+Code Performance Analyzer is a Visual Studio Code extension that helps developers analyze code performance and automatically generate performance tests. It combines static complexity analysis with empirical benchmarking to predict complexity, produce performance tests, and visualize results.
 
-PC (For Training): `docker build -t cpa .`
+Use cases:
+- Quickly assess runtime/memory complexity of functions
+- Generate performance tests for real-metric time and space performance
+- Visualize runtime growth at scale
+- Export performance overviews and test results
 
-Mac: `docker build --platform=linux/amd64 -t cpa .`
-
---
-
-Build Container:
-
-PC: `build_container_win.bat`
-
-Mac: `build_container_mac.sh`
-
---
-
-Reenter Container:
-
-`run_container.bat`
-
-Or
-
-`docker start -ai cpa-dev`
-
-## Models:
-
-Complexity Model: starcoder2:3b
-
-Teacher: deepseek-coder-v2:16b
-
-Push: Run `push_model.py`
-
-Pull Safetensors: `cd src/model/models/student && git clone https://huggingface.co/philippesic/cpa`
-
-## Hosting the model locally:
-
-1. Run the command from `server.info` from the container root. Containers are setup to automatically port map. Note that the server may take a long time to start.
-
-2. Test the server response via a curl: `curl -X POST http://127.0.0.1:5000/analyze -H "Content-Type: application/json" -d '{"code": "def loop(n):\n for i in range(n): pass"}'`
-
-3. Running the model locally requires 11gb vram. Support for 8gb requires retraining a lighter model.
-
-4. Currently, the only way to stop the server is via `kill <pid>` (`ps aux | grep python`)
-
-## Running the extension environment:
-
-1. Setup and run the backend
-
-2. `npm run compile` in the `src` directory
-
-3. In vscode open `.src/extension.ts`
-
-4. Start debugging fith F5. If prompted, select `VSCode Extention Development` as your debugger
-
-## Backend README
-
-todo
-
-## test-code-performance-analyzer README
-
-This is the README for your extension "test-code-performance-analyzer". After writing up a brief description, we recommend including the following sections.
-
-## Features
-
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+![Error](./demo/complexity.png "Complexity Analysis")
+![Error](./demo/test.png "Test Generation")
+![Error](./demo/output.png "Performance Profiling")
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- OS: Windows / Linux / macOS (development files and batch scripts assume Windows PowerShell)
+- Python 3.9+ (backend server and utilities)
+- Node.js (for VS Code extension build steps)
+- Docker Desktop (recommended for dev container)
+- Optional: NVIDIA GPU drivers + Docker with GPU support for model hosting
+- Optional: Kubernetes-In-Docker (Kind, for cluster deployment)
 
-## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
 
-For example:
+## How to Run
 
-This extension contributes the following settings:
+## Set up the Repository:
+1. Clone the repository
+2. Clone the repository: `cd src/model/models/student && git clone https://huggingface.co/philippesic/cpa`
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## Run from Dev Container
 
-## Known Issues
+Running the model from a dev containers allows for GPU inference, which is much faster than the cluster, but requires a CUDA-capable GPU with >10GB VRAM
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+1. Enter the container: `dev.bat`
+2. Start the server: `serve.bat`
+3. Confirm the server is running: `curl 127.0.0.1:5000/health`
+4. Compile the extension in the root directory: `npm run compile`
+5. Enter the VSCode test environment by running F5 from `src/extension/extension.ts` (Using Visual Studio Extension Development)
+6. Open the repository and experiment on the provided test functions (or your own)
 
-## Release Notes
+## Run from Cluster
 
-Users appreciate release notes as you update your extension.
+Running the model from a cluster currently only supports CPU inference, which is slower, but works with a much wider range of hardware
 
-### 1.0.0
+1. Start (Or Create a new) cluster: `cicd/start_deploy.bat`
+2. Update the cluster image to the most recent version: `cicd/update_cluster.bat`
+3. The server will automatically deploy. Enter the test environment and experiment with the extension
 
-Initial release of ...
+# Usage
 
-### 1.0.1
+## Analyze Code Complexity
 
-Fixed issue #.
+Within the test environment, highlight a Python code snippet -> Right Click -> Analyze Code Complexity
 
-### 1.1.0
+## Performance Charts
 
-Added features X, Y, and Z.
+Automatically render in the sidebar upon analysis
 
----
+## Performance Tests
 
-## Following extension guidelines
+Paste a Python Function into the Performance Test input in the sidebar and click generate. Save the provided file and run it.
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+## Export JSON
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+Upon generating a performance test, click Export JSON and save the file
 
-## Working with Markdown
+## Export CSV
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+Open the command pallete and select CPA: Export as CSV
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+# Repository Layout
+```
+├───cicd
+├───demo
+├───dist
+└───src
+    ├───extension
+    └───model
+        ├───build
+        ├───data
+        ├───examples
+        ├───exported_results
+        ├───models
+        │   └───student
+        │       ├───adapters
+        │       ├───base
+        │       └───cpa
+        ├───stub-server
+        ├───tree-sitter-python
+        └───utils
+```

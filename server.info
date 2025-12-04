@@ -1,2 +1,0 @@
-# Paste
-cd src/model && nohup python serve.py > server.log 2>&1 &

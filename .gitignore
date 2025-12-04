@@ -75,3 +75,5 @@ run_container_linux.sh
 server.log
 mock_server.py
 src/model/exported_results/
+vsc-extension-quickstart.md
+QUICKSTART_PERFORMANCEE.md
