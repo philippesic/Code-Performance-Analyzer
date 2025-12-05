@@ -36,7 +36,7 @@ Use cases:
 Running the model from a dev containers allows for GPU inference, which is much faster than the cluster, but requires a CUDA-capable GPU with >10GB VRAM
 
 1. Enter the container: `dev.bat`
-2. Start the server: `serve.bat`
+2. Start the server: `bash serve.sh`
 3. Confirm the server is running: `curl 127.0.0.1:5000/health`
 4. Compile the extension in the root directory: `npm run compile`
 5. Enter the VSCode test environment by running F5 from `src/extension/extension.ts` (Using Visual Studio Extension Development)
