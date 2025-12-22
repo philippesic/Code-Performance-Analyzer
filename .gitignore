@@ -77,3 +77,4 @@ mock_server.py
 src/model/exported_results/
 vsc-extension-quickstart.md
 QUICKSTART_PERFORMANCE.md
+server.log
