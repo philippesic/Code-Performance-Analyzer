@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-{{nonce}}';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Panel</title>
+    <style>
+        body {
+            padding: 10px;
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+            margin: 0;
+        }
+
+        h1 {
+            color: var(--vscode-editor-foreground);
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .section {
+            margin-bottom: 12px;
+        }
+
+        .placeholder {
+            text-align: center;
+            padding: 20px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        #content {
+            display: none;
+        }
+
+        .complexity-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 18px;
+            background: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            border: 2px solid var(--vscode-badge-background);
+            margin-bottom: 4px;
+        }
+
+        .complexity-badge.good {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.5);
+            color: rgb(16, 185, 129);
+        }
+
+        .complexity-badge.moderate {
+            background: rgba(245, 158, 11, 0.15);
+            border-color: rgba(245, 158, 11, 0.5);
+            color: rgb(245, 158, 11);
+        }
+
+        .complexity-badge.poor {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: rgb(239, 68, 68);
+        }
+
+        .rating-text {
+            font-size: 14px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .rating-text.good {
+            color: rgb(16, 185, 129);
+        }
+
+        .rating-text.moderate {
+            color: rgb(245, 158, 11);
+        }
+
+        .rating-text.poor {
+            color: rgb(239, 68, 68);
+        }
+
+        .detail-box {
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+        }
+
+        .detail-label {
+            color: var(--vscode-descriptionForeground);
+            font-size: 13px;
+        }
+
+        .detail-value {
+            color: var(--vscode-foreground);
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .explanation-box {
+            background: var(--vscode-textBlockQuote-background);
+            border-left: 3px solid var(--vscode-textBlockQuote-border);
+            padding: 8px;
+            margin-top: 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Code Analysis</h1>
+
+    <div id="placeholder" class="placeholder">
+        Run an analysis to see results here.
+    </div>
+
+    <div id="content">
+        <div class="section">
+            <div class="complexity-badge" id="complexityBadge">O(n)</div>
+            <div class="rating-text" id="performanceRating">Good</div>
+        </div>
+
+        <div class="section">
+            <div class="detail-box">
+                <div class="detail-row">
+                    <span class="detail-label">Time Complexity</span>
+                    <span class="detail-value" id="detailComplexity">-</span>
+                </div>
+            </div>
+
+            <div id="explanationContainer" style="display: none;">
+                <div class="explanation-box" id="explanationText"></div>
+            </div>
+        </div>
+
+        <div class="timestamp" id="timestamp"></div>
+    </div>
+
+    <script nonce="{{nonce}}">
+        const vscode = acquireVsCodeApi();
+
+        function getComplexityClass(complexity) {
+            const comp = complexity.toLowerCase();
+            if (comp.includes('o(1)') || comp.includes('o(log')) {
+                return 'good';
+            } else if (comp.includes('o(n)') && !comp.includes('o(n^') && !comp.includes('o(n²)')) {
+                return 'moderate';
+            } else {
+                return 'poor';
+            }
+        }
+
+        function getPerformanceRating(complexity) {
+            const comp = complexity.toLowerCase();
+            if (comp.includes('o(1)')) {
+                return { label: 'Excellent', class: 'good' };
+            } else if (comp.includes('o(log')) {
+                return { label: 'Very Good', class: 'good' };
+            } else if (comp.includes('o(n)') && !comp.includes('o(n^') && !comp.includes('o(n²)')) {
+                return { label: 'Good', class: 'moderate' };
+            } else if (comp.includes('o(n log n)')) {
+                return { label: 'Fair', class: 'moderate' };
+            } else if (comp.includes('o(n^2)') || comp.includes('o(n²)')) {
+                return { label: 'Poor', class: 'poor' };
+            } else if (comp.includes('o(2^n)')) {
+                return { label: 'Very Poor', class: 'poor' };
+            } else if (comp.includes('o(n!)')) {
+                return { label: 'Critical', class: 'poor' };
+            } else {
+                return { label: 'Unknown', class: 'moderate' };
+            }
+        }
+
+        function updateAnalysis(data) {
+            const placeholder = document.getElementById('placeholder');
+            const content = document.getElementById('content');
+            const complexityBadge = document.getElementById('complexityBadge');
+            const detailComplexity = document.getElementById('detailComplexity');
+            const timestamp = document.getElementById('timestamp');
+            const performanceRating = document.getElementById('performanceRating');
+            const explanationContainer = document.getElementById('explanationContainer');
+            const explanationText = document.getElementById('explanationText');
+
+            // Parse the message
+            const lines = data.text.split('\\n');
+            let complexity = 'O(?)';
+
+            lines.forEach(line => {
+                if (line.includes('Estimated Time Complexity:')) {
+                    complexity = line.split(':')[1].trim();
+                }
+            });
+
+            // Show content, hide placeholder
+            placeholder.style.display = 'none';
+            content.style.display = 'block';
+
+            // Update complexity badge
+            complexityBadge.textContent = complexity;
+            complexityBadge.className = 'complexity-badge ' + getComplexityClass(complexity);
+
+            // Update detail complexity
+            detailComplexity.textContent = complexity;
+
+            // Update performance rating
+            const rating = getPerformanceRating(complexity);
+            performanceRating.textContent = rating.label;
+            performanceRating.className = 'rating-text ' + rating.class;
+
+            // Update timestamp
+            const now = new Date();
+            timestamp.textContent = 'Analyzed at ' + now.toLocaleTimeString();
+
+            // Handle explanation if available
+            if (data.explanation) {
+                explanationContainer.style.display = 'block';
+                explanationText.textContent = data.explanation;
+            } else {
+                explanationContainer.style.display = 'none';
+            }
+        }
+
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.command) {
+                case 'updateResult':
+                    updateAnalysis(message);
+                    break;
+            }
+        });
+    </script>
+</body>
+
+</html>

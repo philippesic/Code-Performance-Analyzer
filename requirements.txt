@@ -14,3 +14,7 @@ requests
 fastapi
 uvicorn
 flask
+protobuf
+matplotlib
+numpy
+flask[async]

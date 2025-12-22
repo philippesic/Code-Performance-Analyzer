@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cpa-dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cpa-dev
+  template:
+    metadata:
+      labels:
+        app: cpa-dev
+    spec:
+      containers:
+      - name: cpa-dev
+        image: cpa-dev:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000

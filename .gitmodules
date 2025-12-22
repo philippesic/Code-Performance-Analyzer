@@ -1,3 +1,3 @@
-[submodule "src/tree-sitter-python"]
-	path = src/tree-sitter-python
+[submodule "src/model/tree-sitter-python"]
+	path = src/model/tree-sitter-python
 	url = https://github.com/tree-sitter/tree-sitter-python.git

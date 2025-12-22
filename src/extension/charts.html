@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; img-src https: data:; style-src 'unsafe-inline'; script-src 'nonce-{{nonce}}' https://cdn.jsdelivr.net; connect-src 'none';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Charts</title>
+    <style>
+        body {
+            padding: 10px;
+            font-family: var(--vscode-font-family);
+            color: var(--vscode-foreground);
+            background-color: var(--vscode-editor-background);
+        }
+
+        h1 {
+            color: var(--vscode-editor-foreground);
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .section {
+            margin-bottom: 12px;
+        }
+
+        .chart-card {
+            background: var(--vscode-editor-background);
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        select,
+        button {
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        button {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        details {
+            border: 1px solid var(--vscode-panel-border);
+            border-radius: 6px;
+            padding: 6px;
+            background: var(--vscode-editor-background);
+        }
+
+        summary {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 240px !important;
+        }
+
+        .placeholder {
+            text-align: center;
+            padding: 20px;
+            color: var(--vscode-descriptionForeground);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Performance Charts</h1>
+    <div id="placeholder" class="placeholder">
+        Run an analysis to see performance charts here.
+    </div>
+    <div id="chartContent" style="display: none;">
+        <div class="section row">
+            <div>Function:</div>
+            <select id="functionSelect"></select>
+            <button id="exportBtn" title="Export analysis as JSON">Export JSON</button>
+        </div>
+        <div class="chart-card section">
+            <div style="margin-bottom:6px;"><strong>Runtime growth vs n</strong></div>
+            <canvas id="lineChart"></canvas>
+        </div>
+        <details class="section" open>
+            <summary>Function details</summary>
+            <div id="functionDetails" style="margin-top:6px;"></div>
+        </details>
+    </div>
+
+    <script nonce="{{nonce}}" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script nonce="{{nonce}}">
+        const vscode = acquireVsCodeApi();
+
+        // Initialize chart
+        let lineChart = null;
+        const lineCtx = document.getElementById('lineChart');
+        if (lineCtx) {
+            const themeGrid = getComputedStyle(document.documentElement).getPropertyValue('--vscode-widget-border') || 'rgba(128,128,128,0.3)';
+
+            lineChart = new Chart(lineCtx.getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: true },
+                        tooltip: { enabled: true }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: themeGrid } },
+                        x: { grid: { color: themeGrid } }
+                    }
+                }
+            });
+        }
+
+        const functionSelect = document.getElementById('functionSelect');
+        const exportBtn = document.getElementById('exportBtn');
+        const detailsEl = document.getElementById('functionDetails');
+        const placeholder = document.getElementById('placeholder');
+        const chartContent = document.getElementById('chartContent');
+        let lastPayload = null;
+
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                if (!lastPayload) return;
+                const blob = new Blob([JSON.stringify(lastPayload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'cpa-analysis.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        function populateFunctionSelect(functions) {
+            if (!functionSelect) return;
+            functionSelect.innerHTML = '';
+            if (!functions || functions.length === 0) {
+                const opt = document.createElement('option');
+                opt.textContent = 'No functions detected';
+                opt.value = '-1';
+                functionSelect.appendChild(opt);
+                functionSelect.disabled = true;
+            } else {
+                functionSelect.disabled = false;
+                functions.forEach((f, idx) => {
+                    const opt = document.createElement('option');
+                    opt.textContent = f.name + (f.isRecursive ? ' (recursive)' : '');
+                    opt.value = String(idx);
+                    functionSelect.appendChild(opt);
+                });
+            }
+        }
+
+        function renderFunctionDetails(functions) {
+            if (!detailsEl) return;
+            if (!functions || functions.length === 0) {
+                detailsEl.textContent = 'No functions were detected in the selected code.';
+                return;
+            }
+            detailsEl.innerHTML = '';
+            functions.forEach((f) => {
+                const div = document.createElement('div');
+                div.style.marginBottom = '6px';
+                div.innerHTML = '<strong>' + escapeHtml(f.name) + '</strong>' +
+                    ' — complexity: ' + escapeHtml(f.complexity || '?') +
+                    ', recursive: ' + (f.isRecursive ? 'yes' : 'no') +
+                    ', starts at line: ' + ((f.startLine !== undefined ? f.startLine + 1 : '?'));
+                detailsEl.appendChild(div);
+            });
+        }
+
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function highlightDataset(datasets, labelToHighlight) {
+            return datasets.map(ds => {
+                const isHi = ds.label === labelToHighlight;
+                return {
+                    ...ds,
+                    borderWidth: isHi ? 3 : 1.5,
+                    borderDash: isHi ? [] : [4, 2],
+                    pointRadius: isHi ? 2.5 : 0
+                };
+            });
+        }
+
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.command) {
+                case 'updateChart':
+                    // Show chart content, hide placeholder
+                    if (placeholder) placeholder.style.display = 'none';
+                    if (chartContent) chartContent.style.display = 'block';
+
+                    // update charts if provided
+                    if (message.chartData && lineChart) {
+                        lastPayload = message.chartData;
+                        // line chart
+                        if (message.chartData.line) {
+                            lineChart.data.labels = message.chartData.line.labels || [];
+                            const ds = message.chartData.line.datasets || [];
+                            lineChart.data.datasets = highlightDataset(ds, message.chartData.line.highlight);
+                            lineChart.update();
+                        }
+
+                        // functions
+                        populateFunctionSelect(message.chartData.functions || []);
+                        renderFunctionDetails(message.chartData.functions || []);
+                    }
+                    break;
+            }
+        });
+
+        if (functionSelect) {
+            functionSelect.addEventListener('change', () => {
+                if (!lastPayload || !lastPayload.line || !lineChart) return;
+                const selectedIdx = parseInt(functionSelect.value, 10);
+                if (isNaN(selectedIdx) || !lastPayload.functions || !lastPayload.functions[selectedIdx]) {
+                    lineChart.data.datasets = highlightDataset(lastPayload.line.datasets, lastPayload.line.highlight);
+                    lineChart.update();
+                    return;
+                }
+                const fn = lastPayload.functions[selectedIdx];
+                const labelMap = { 'O(1)': 'O(1)', 'O(n)': 'O(n)', 'O(n log n)': 'O(n log n)', 'O(n²)': 'O(n²)', 'O(2^n)': 'O(2^n)', 'O(n!)': 'O(n!)' };
+                const targetLabel = labelMap[fn.complexity] || lastPayload.line.highlight;
+                lineChart.data.datasets = highlightDataset(lastPayload.line.datasets, targetLabel);
+                lineChart.update();
+            });
+        }
+    </script>
+</body>
+
+</html>
